@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "656452655199",
+    "project_id": "castillo-sem6",
+    "storage_bucket": "castillo-sem6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656452655199:android:d4fb653bb3c4345b9d63ea",
+        "android_client_info": {
+          "package_name": "com.example.semana7_castillo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGPqlxFwB6Tc2Xo2nqSK29s_M3RBFxg-M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
