@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'cart_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'auth_service.dart';
+import 'mis_pedidos_screen.dart';
 
 class NovedadesScreen extends StatefulWidget {
   const NovedadesScreen({super.key});
@@ -35,7 +37,7 @@ class _NovedadesScreenState extends State<NovedadesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Juanchos'),
+        title: const Text('Novedades'),
         centerTitle: true,
         elevation: 0,
       ),

@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'cart_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'auth_service.dart';
+import 'login_screen.dart';
+import 'mis_pedidos_screen.dart';
 
 class ProductosScreen extends StatefulWidget {
   const ProductosScreen({super.key});
@@ -13,6 +16,8 @@ class ProductosScreen extends StatefulWidget {
 
 class _ProductosScreenState extends State<ProductosScreen> {
   String _categoriaSeleccionada = 'Todos';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   
   final List<Map<String, dynamic>> _categorias = [
     {'nombre': 'Todos', 'icono': Icons.grid_view},
@@ -25,6 +30,12 @@ class _ProductosScreenState extends State<ProductosScreen> {
   ];
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -34,6 +45,41 @@ class _ProductosScreenState extends State<ProductosScreen> {
       ),
       body: Column(
         children: [
+          // Barra de búsqueda
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase().trim();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Buscar productos...',
+                prefixIcon: const Icon(Icons.search, color: Colors.orange),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+          
           // Filtro de categorías
           Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -122,6 +168,53 @@ class _ProductosScreenState extends State<ProductosScreen> {
 
                 final productos = snapshot.data!.docs;
 
+                // Filtrar por búsqueda si hay query
+                final productosFiltrados = _searchQuery.isEmpty
+                    ? productos
+                    : productos.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final categoria = (data['k_cate'] ?? '').toString().toLowerCase();
+                        final nombre = (data['l_nomb'] ?? '').toString().toLowerCase();
+                        final descripcion = (data['l_desc'] ?? '').toString().toLowerCase();
+                        
+                        return categoria.contains(_searchQuery) ||
+                               nombre.contains(_searchQuery) ||
+                               descripcion.contains(_searchQuery);
+                      }).toList();
+
+                if (productosFiltrados.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, 
+                          size: 80, 
+                          color: Colors.grey[400]
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No se encontraron productos',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        if (_searchQuery.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Intenta con otra búsqueda',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+
                 return GridView.builder(
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -130,10 +223,10 @@ class _ProductosScreenState extends State<ProductosScreen> {
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
-                  itemCount: productos.length,
+                  itemCount: productosFiltrados.length,
                   itemBuilder: (context, index) {
-                    final producto = productos[index].data() as Map<String, dynamic>;
-                    final productoId = productos[index].id;
+                    final producto = productosFiltrados[index].data() as Map<String, dynamic>;
+                    final productoId = productosFiltrados[index].id;
 
                     return _ProductoCard(
                       nombre: producto['l_nomb'] ?? 'Sin nombre',

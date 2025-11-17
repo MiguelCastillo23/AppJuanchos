@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'cart_provider.dart';
+import 'auth_service.dart';
+import 'login_screen.dart';
+import 'checkout_screen.dart';
+import 'mis_pedidos_screen.dart';
 
 class CarritoScreen extends StatelessWidget {
   const CarritoScreen({super.key});
@@ -12,7 +15,7 @@ class CarritoScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Juanchos'),
+        title: const Text('Mi Carrito'),
         centerTitle: true,
         actions: [
           if (!cart.isEmpty)
@@ -305,7 +308,7 @@ class _ResumenTotal extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () => _finalizarPedido(context, cart),
+                onPressed: () => _irACheckout(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
@@ -314,7 +317,7 @@ class _ResumenTotal extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  'Finalizar Pedido',
+                  'Continuar con el Pedido',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -328,66 +331,26 @@ class _ResumenTotal extends StatelessWidget {
     );
   }
 
-  void _finalizarPedido(BuildContext context, CartProvider cart) async {
-    try {
-      // Crear el pedido en Firebase
-      final pedido = {
-        'fecha': FieldValue.serverTimestamp(),
-        'total': cart.totalPrecio,
-        'cantidad_productos': cart.totalCantidad,
-        'estado': 'Pendiente',
-        'productos': cart.items.values.map((item) {
-          return {
-            'id_producto': item.id,
-            'nombre': item.nombre,
-            'precio': item.precio,
-            'cantidad': item.cantidad,
-            'subtotal': item.subtotal,
-          };
-        }).toList(),
-      };
+  void _irACheckout(BuildContext context) async {
+    final authService = AuthService();
+    final user = authService.currentUser;
 
-      await FirebaseFirestore.instance.collection('pedidos').add(pedido);
-
-      // Mostrar diálogo de confirmación
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 32),
-                SizedBox(width: 12),
-                Text('¡Pedido realizado!'),
-              ],
-            ),
-            content: const Text(
-              'Tu pedido ha sido registrado exitosamente. '
-              'Pronto nos pondremos en contacto contigo.',
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  cart.limpiarCarrito();
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Aceptar'),
-              ),
-            ],
-          ),
+    // Si no está logueado, ir a login
+    if (user == null) {
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      
+      // Si se logueó exitosamente, ir al checkout
+      if (result == true && context.mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CheckoutScreen()),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al finalizar pedido: $e'),
-          backgroundColor: Colors.red,
-        ),
+    } else {
+      // Si ya está logueado, ir directo al checkout
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CheckoutScreen()),
       );
     }
   }

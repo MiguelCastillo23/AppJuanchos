@@ -5,6 +5,7 @@ import 'cart_provider.dart';
 import 'productos_screen.dart';
 import 'novedades_screen.dart';
 import 'carrito_screen.dart';
+import 'mis_pedidos_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
       create: (_) => CartProvider(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Archi',
+        title: 'Juanchos',
         theme: ThemeData(
           primarySwatch: Colors.orange,
           useMaterial3: true,
