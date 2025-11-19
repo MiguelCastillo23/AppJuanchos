@@ -6,6 +6,7 @@ import 'cart_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'auth_service.dart';
 import 'mis_pedidos_screen.dart';
+import 'login_screen.dart';
 
 class NovedadesScreen extends StatefulWidget {
   const NovedadesScreen({super.key});
@@ -40,6 +41,52 @@ class _NovedadesScreenState extends State<NovedadesScreen> {
         title: const Text('Novedades'),
         centerTitle: true,
         elevation: 0,
+
+        // Botón de cerrar sesión
+        leading: StreamBuilder(
+          stream: AuthService().authStateChanges,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _mostrarDialogoCerrarSesion(context),
+                tooltip: 'Cerrar sesión',
+              );
+            } else {
+              // Usuario NO logueado - Mostrar login
+              return IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                tooltip: 'Iniciar sesión',
+              );
+            }
+          },
+        ),
+
+        // Botón de Mis Pedidos SOLO si está logueado
+        actions: [
+          StreamBuilder(
+            stream: AuthService().authStateChanges,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return IconButton(
+                  icon: const Icon(Icons.receipt_long),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MisPedidosScreen()),
+                    );
+                  },
+                  tooltip: 'Mis pedidos',
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -102,6 +149,41 @@ class _NovedadesScreenState extends State<NovedadesScreen> {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+  void _mostrarDialogoCerrarSesion(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro de cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await AuthService().cerrarSesion();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Sesión cerrada'),
+                    duration: const Duration(milliseconds: 500),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
       ),
     );
   }

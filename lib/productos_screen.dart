@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'cart_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'auth_service.dart';
-import 'login_screen.dart';
 import 'mis_pedidos_screen.dart';
+import 'login_screen.dart';
 
 class ProductosScreen extends StatefulWidget {
   const ProductosScreen({super.key});
@@ -42,7 +42,52 @@ class _ProductosScreenState extends State<ProductosScreen> {
         title: const Text('Juanchos'),
         centerTitle: true,
         elevation: 0,
+
+        // Botón de cerrar sesión
+        leading: StreamBuilder(
+          stream: AuthService().authStateChanges,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _mostrarDialogoCerrarSesion(context),
+                tooltip: 'Cerrar sesión',
+              );
+            }else {
+              return IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                tooltip: 'Iniciar sesión',
+              );
+            }
+          },
+        ),
+ 
+        actions: [
+          StreamBuilder(
+            stream: AuthService().authStateChanges,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return IconButton(
+                  icon: const Icon(Icons.receipt_long),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MisPedidosScreen()),
+                    );
+                  },
+                  tooltip: 'Mis pedidos',
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
+
       body: Column(
         children: [
           // Barra de búsqueda
@@ -241,6 +286,42 @@ class _ProductosScreenState extends State<ProductosScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _mostrarDialogoCerrarSesion(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro de cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await AuthService().cerrarSesion();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Sesión cerrada'),
+                    duration: const Duration(milliseconds: 500),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cerrar sesión'),
           ),
         ],
       ),

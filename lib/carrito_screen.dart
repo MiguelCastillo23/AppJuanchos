@@ -17,6 +17,31 @@ class CarritoScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Mi Carrito'),
         centerTitle: true,
+
+        leading: StreamBuilder(
+          stream: AuthService().authStateChanges,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _mostrarDialogoCerrarSesion(context),
+                tooltip: 'Cerrar sesión',
+              );
+            } else {
+              // Usuario NO logueado - Mostrar login
+              return IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                tooltip: 'Iniciar sesión',
+              );
+            }
+          },
+        ),
+
         actions: [
           if (!cart.isEmpty)
             IconButton(
@@ -107,7 +132,41 @@ class CarritoScreen extends StatelessWidget {
     );
   }
 }
-
+void _mostrarDialogoCerrarSesion(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Cerrar sesión'),
+      content: const Text('¿Estás seguro de cerrar sesión?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            await AuthService().cerrarSesion();
+            if (context.mounted) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Sesión cerrada'),
+                  duration: const Duration(milliseconds: 500),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Cerrar sesión'),
+        ),
+      ],
+    ),
+  );
+}
 class _ItemCarrito extends StatelessWidget {
   final CartItem item;
 

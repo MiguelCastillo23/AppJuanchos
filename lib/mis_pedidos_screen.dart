@@ -3,8 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 
-class MisPedidosScreen extends StatelessWidget {
+class MisPedidosScreen extends StatefulWidget {
   const MisPedidosScreen({super.key});
+
+  @override
+  State<MisPedidosScreen> createState() => _MisPedidosScreenState();
+}
+
+class _MisPedidosScreenState extends State<MisPedidosScreen> {
 
   Color _getEstadoColor(String estado) {
     switch (estado.toLowerCase()) {
@@ -111,19 +117,18 @@ class MisPedidosScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Mis Pedidos'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _cerrarSesion(context),
-            tooltip: 'Cerrar sesión',
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.logout),
+        //     onPressed: () => _cerrarSesion(context),
+        //     tooltip: 'Cerrar sesión',
+        //   ),
+        // ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('pedidos')
             .where('usuario_id', isEqualTo: user.uid)
-            .orderBy('fecha', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -132,7 +137,20 @@ class MisPedidosScreen extends StatelessWidget {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text('Error: ${snapshot.error}'),
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error al cargar pedidos',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -164,14 +182,21 @@ class MisPedidosScreen extends StatelessWidget {
             );
           }
 
-          final pedidos = snapshot.data!.docs;
+          // Ordenar manualmente por fecha
+          final pedidosList = snapshot.data!.docs.toList();
+          pedidosList.sort((a, b) {
+            final fechaA = (a.data() as Map<String, dynamic>)['fecha'] as Timestamp?;
+            final fechaB = (b.data() as Map<String, dynamic>)['fecha'] as Timestamp?;
+            if (fechaA == null || fechaB == null) return 0;
+            return fechaB.compareTo(fechaA); // Más reciente primero
+          });
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: pedidos.length,
+            itemCount: pedidosList.length,
             itemBuilder: (context, index) {
-              final pedido = pedidos[index].data() as Map<String, dynamic>;
-              final pedidoId = pedidos[index].id;
+              final pedido = pedidosList[index].data() as Map<String, dynamic>;
+              final pedidoId = pedidosList[index].id;
               final fecha = pedido['fecha'] as Timestamp?;
               final estado = pedido['estado'] ?? 'Pendiente';
               final tipoEntrega = pedido['tipo_entrega'] ?? 'recojo';
@@ -558,32 +583,32 @@ class MisPedidosScreen extends StatelessWidget {
     );
   }
 
-  void _cerrarSesion(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Estás seguro de cerrar sesión?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await AuthService().cerrarSesion();
-              if (context.mounted) {
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Cerrar sesión'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _cerrarSesion(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Cerrar sesión'),
+  //       content: const Text('¿Estás seguro de cerrar sesión?'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text('Cancelar'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () async {
+  //             await AuthService().cerrarSesion();
+  //             if (context.mounted) {
+  //               Navigator.of(context).pop();
+  //             }
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.red,
+  //             foregroundColor: Colors.white,
+  //           ),
+  //           child: const Text('Cerrar sesión'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }
